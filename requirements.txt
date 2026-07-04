@@ -1,6 +1,8 @@
 slack-bolt>=1.21.0
 slack-sdk>=3.31.0
 requests>=2.31.0
+flask>=3.0.0
+python-dotenv>=1.0.0
 google-genai>=1.0.0
 python-dateutil>=2.9.0.post0
 pytest>=8.3.0

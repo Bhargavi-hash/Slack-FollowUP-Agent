@@ -3,18 +3,27 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import uuid
 from datetime import date
 from typing import Dict, List, Optional
 
 import requests
+from dotenv import load_dotenv
+from flask import Flask, request as flask_request
 from slack_bolt import App
+from slack_bolt.adapter.flask import SlackRequestHandler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt.oauth.oauth_settings import OAuthSettings
+from slack_sdk.oauth.installation_store.file import FileInstallationStore
+from slack_sdk.oauth.state_store.file import FileOAuthStateStore
 
 from extraction.extract_actions import extract_actions
 from posting.post_items import post_action_items
 from resolution.resolve_owner import resolve_items_owners
 
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -23,12 +32,13 @@ SLACK_MCP_URL = "https://mcp.slack.com/mcp"
 SLACK_MCP_PROTOCOL_VERSION = "2025-06-18"
 SLACK_MCP_USER_SEARCH_TOOL = "slack_search_users"
 
+SLACK_BOT_SCOPES = ["commands", "chat:write", "search:read.users"]
+SLACK_USER_SCOPES = ["chat:write", "canvases:write"]
+INSTALLATION_STORE_DIR = os.environ.get("SLACK_INSTALLATION_DIR", "./.slack_installations")
+OAUTH_STATE_STORE_DIR = os.environ.get("SLACK_OAUTH_STATE_DIR", "./.slack_oauth_state")
 
-def _mcp_call(method: str, params: Optional[dict], session_id: Optional[str] = None) -> requests.Response:
-    token = os.environ.get("SLACK_BOT_TOKEN")
-    if not token:
-        raise RuntimeError("SLACK_BOT_TOKEN is not set")
 
+def _mcp_call(token: str, method: str, params: Optional[dict], session_id: Optional[str] = None) -> requests.Response:
     body = {"jsonrpc": "2.0", "id": str(uuid.uuid4()), "method": method}
     if params is not None:
         body["params"] = params
@@ -76,16 +86,22 @@ def _normalize_mcp_user(user: dict) -> Dict[str, str]:
     }
 
 
-def _lookup_slack_users_with_mcp(owner_name: str) -> List[Dict[str, str]]:
+def _lookup_slack_users_with_mcp(owner_name: str, user_token: Optional[str]) -> List[Dict[str, str]]:
     """
     Looks up Slack users by name via Slack's official MCP server (mcp.slack.com),
     using the slack_search_users tool over JSON-RPC 2.0 / Streamable HTTP.
-    Requires the search:read.users bot scope in addition to chat:write/commands.
+    Slack's MCP server rejects bot tokens, so this uses the OAuth-installing
+    user's token (xoxp-...) rather than SLACK_BOT_TOKEN.
     """
     logger.info("MCP lookup requested for owner: %s", owner_name)
 
+    if not user_token:
+        logger.error("No Slack user token available for MCP lookup (owner=%s)", owner_name)
+        return []
+
     try:
         init_response = _mcp_call(
+            user_token,
             "initialize",
             {
                 "protocolVersion": SLACK_MCP_PROTOCOL_VERSION,
@@ -97,6 +113,7 @@ def _lookup_slack_users_with_mcp(owner_name: str) -> List[Dict[str, str]]:
         _mcp_result(init_response, json.loads(init_response.request.body)["id"])
 
         search_response = _mcp_call(
+            user_token,
             "tools/call",
             {"name": SLACK_MCP_USER_SEARCH_TOOL, "arguments": {"query": owner_name}},
             session_id=session_id,
@@ -160,7 +177,19 @@ def _build_modal(trigger_id: str) -> Dict[str, object]:
 
 
 def create_app() -> App:
-    app = App(token=os.environ["SLACK_BOT_TOKEN"], signing_secret=os.environ["SLACK_SIGNING_SECRET"])
+    installation_store = FileInstallationStore(base_dir=INSTALLATION_STORE_DIR)
+    state_store = FileOAuthStateStore(expiration_seconds=600, base_dir=OAUTH_STATE_STORE_DIR)
+
+    oauth_settings = OAuthSettings(
+        client_id=os.environ["SLACK_CLIENT_ID"],
+        client_secret=os.environ["SLACK_CLIENT_SECRET"],
+        scopes=SLACK_BOT_SCOPES,
+        user_scopes=SLACK_USER_SCOPES,
+        installation_store=installation_store,
+        state_store=state_store,
+    )
+
+    app = App(signing_secret=os.environ["SLACK_SIGNING_SECRET"], oauth_settings=oauth_settings)
 
     @app.command("/extract-actions")
     def handle_extract_actions_command(ack, body, client):
@@ -181,15 +210,48 @@ def create_app() -> App:
             logger.error("Missing channel id in modal metadata")
             return
 
+        team_id = body.get("team", {}).get("id")
+        installation = (
+            installation_store.find_installation(enterprise_id=None, team_id=team_id) if team_id else None
+        )
+        user_token = installation.user_token if installation else None
+
         extracted_items = extract_actions(transcript=transcript, meeting_date=meeting_date)
-        resolved_items = resolve_items_owners(extracted_items, _lookup_slack_users_with_mcp)
+        resolved_items = resolve_items_owners(
+            extracted_items, lambda owner_name: _lookup_slack_users_with_mcp(owner_name, user_token)
+        )
         post_action_items(client=client, channel_id=channel_id, items=resolved_items)
 
     return app
 
 
+def _run_oauth_server(bolt_app: App, port: int) -> None:
+    """
+    Serves Bolt's built-in /slack/install and /slack/oauth_redirect endpoints.
+    Needed because the OAuth install flow is plain HTTP, while events/interactivity
+    run over Socket Mode below. Point an ngrok tunnel at this port and use that as
+    the manifest's redirect_urls host.
+    """
+    flask_app = Flask(__name__)
+    oauth_handler = SlackRequestHandler(bolt_app)
+
+    @flask_app.route("/slack/install", methods=["GET"])
+    def install():
+        return oauth_handler.handle(flask_request)
+
+    @flask_app.route("/slack/oauth_redirect", methods=["GET"])
+    def oauth_redirect():
+        return oauth_handler.handle(flask_request)
+
+    flask_app.run(port=port, use_reloader=False)
+
+
 if __name__ == "__main__":
     bolt_app = create_app()
+
+    oauth_port = int(os.environ.get("SLACK_OAUTH_PORT", "3000"))
+    threading.Thread(target=_run_oauth_server, args=(bolt_app, oauth_port), daemon=True).start()
+
     app_token = os.environ.get("SLACK_APP_TOKEN")
     if not app_token:
         raise RuntimeError("SLACK_APP_TOKEN is required for Socket Mode")

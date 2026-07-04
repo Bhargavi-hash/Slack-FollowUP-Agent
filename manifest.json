@@ -19,11 +19,18 @@
     ]
   },
   "oauth_config": {
+    "redirect_urls": [
+      "https://hatchery-unwell-prankster.ngrok-free.dev/slack/oauth_redirect"
+    ],
     "scopes": {
       "bot": [
         "commands",
         "chat:write",
         "search:read.users"
+      ],
+      "user": [
+        "chat:write",
+        "canvases:write"
       ]
     }
   },
