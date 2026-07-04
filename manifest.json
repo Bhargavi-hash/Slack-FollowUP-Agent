@@ -1,0 +1,42 @@
+{
+  "display_information": {
+    "name": "Meeting Action Items Agent",
+    "description": "Extract and post grounded meeting action items"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Action Items Agent",
+      "always_online": true
+    },
+    "slash_commands": [
+      {
+        "command": "/extract-actions",
+        "url": "https://example.com/slack/events",
+        "description": "Extract grounded action items from a pasted transcript",
+        "usage_hint": "Paste transcript in modal",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "commands",
+        "chat:write"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://example.com/slack/events",
+      "bot_events": []
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://example.com/slack/events"
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": true,
+    "token_rotation_enabled": false
+  }
+}
