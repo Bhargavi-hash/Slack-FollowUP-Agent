@@ -22,7 +22,8 @@
     "scopes": {
       "bot": [
         "commands",
-        "chat:write"
+        "chat:write",
+        "search:read.users"
       ]
     }
   },
