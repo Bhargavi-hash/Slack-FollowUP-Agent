@@ -166,12 +166,11 @@ def _gemini_extract(transcript: str, meeting_date: date) -> List[ActionItem]:
         raise RuntimeError("GEMINI_API_KEY is not set")
 
     try:
-        import google.generativeai as genai
+        from google import genai
     except ImportError as exc:
-        raise RuntimeError("google-generativeai is required for Gemini extraction") from exc
+        raise RuntimeError("google-genai is required for Gemini extraction") from exc
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    client = genai.Client(api_key=api_key)
 
     prompt = (
         "You extract action items from meeting transcripts. Return ONLY JSON: an array of "
@@ -186,7 +185,7 @@ def _gemini_extract(transcript: str, meeting_date: date) -> List[ActionItem]:
         f"{transcript}"
     )
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     raw = _strip_json_fence(response.text or "[]")
     parsed = json.loads(raw)
     if not isinstance(parsed, list):

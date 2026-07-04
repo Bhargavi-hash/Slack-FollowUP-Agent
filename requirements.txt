@@ -1,5 +1,5 @@
 slack-bolt>=1.21.0
 slack-sdk>=3.31.0
-google-generativeai>=0.7.2
+google-genai>=1.0.0
 python-dateutil>=2.9.0.post0
 pytest>=8.3.0
