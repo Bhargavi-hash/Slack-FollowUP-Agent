@@ -1,11 +1,21 @@
+# api/index.py
 from flask import Flask, request
-from verify import verify_slack_request
 from slack_sdk import WebClient
+from slack_sdk.signature import SignatureVerifier
 from datetime import date
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 slack_client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
+verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_SECRET"))
+
+def verify_slack_request(request) -> bool:
+    body = request.get_data()
+    headers = request.headers
+    return verifier.is_valid_request(body, headers)
 
 @app.route("/")
 def health_check():
