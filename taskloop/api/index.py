@@ -32,28 +32,28 @@ def slack_commands():
         "type": "modal",
         "callback_id": "transcript_submission",
         "title": {"type": "plain_text", "text": "TaskLoop", "emoji": True},
-        "submit": {"type": "plain_text", "text": "Extract", "emoji": True},
+        "submit": {"type": "plain_text", "text": "Submit", "emoji": True},
         "close": {"type": "plain_text", "text": "Cancel", "emoji": True},
         "blocks": [
             {
                 "type": "input",
-                "block_id": "transcript_block",
-                "label": {"type": "plain_text", "text": "Paste your transcript"},
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "transcript_input",
-                    "multiline": True
-                }
-            },
-            {
-                "type": "input",
                 "block_id": "datepicker_block",
-                "label": {"type": "plain_text", "text": "Select a date"},
+                "label": {"type": "plain_text", "text": "Select a meeting date"},
                 "element": {
                     "type": "datepicker",
                     "action_id": "datepicker_action",
                     "initial_date": date.today().isoformat(),
                     "placeholder": {"type": "plain_text", "text": "Select a date"}
+                }
+            },
+            {
+                "type": "input",
+                "block_id": "transcript_block",
+                "label": {"type": "plain_text", "text": "Paste your meeting transcript"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "transcript_input",
+                    "multiline": True
                 }
             }
         ]
