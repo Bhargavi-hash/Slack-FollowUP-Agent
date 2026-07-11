@@ -171,7 +171,7 @@ def slack_oauth_redirect():
     if not data.get("ok"):
         return f"Installation failed: {data.get('error')}", 400
 
-    bot_token = data['acsess_token']
+    bot_token = data['access_token']
     user_token = data['authed_user']['access_token']
     team_id = data['team']['id']   
 
