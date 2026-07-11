@@ -47,3 +47,12 @@ Bigger transcripts run through a queue in the background, so nothing times out e
 
 Any workspace can add TaskLoop — it walks you through Slack's normal OAuth flow and works independently for each team that installs it.
 
+## AI and LLM assistance
+
+- **Claude**: 
+    -- Helped me figure out Upstash QStash when I was stuck wondering how to process and deliver longer transcripts and action list since vercel is a serverless deployement with no persistence.
+    -- Helped with finding documentations for modal building in slack and slack MCP server tool list.
+- **Gemini**: 
+    -- Used to generate images (logos, banner)
+
+** As this was a learning project for me, I didn't use tools like Cursor, Claude Code or Codex. If you are here to learn about MCPs and Agent development, I recommend you try to build it yourself from scratch **
