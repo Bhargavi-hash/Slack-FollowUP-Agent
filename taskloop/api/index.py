@@ -1,4 +1,8 @@
-# api/index.py
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
 from flask import Flask, request
 from slack_sdk import WebClient
 from slack_sdk.signature import SignatureVerifier
