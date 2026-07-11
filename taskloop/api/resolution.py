@@ -1,3 +1,5 @@
+from real_lookup import slack_mcp_lookup
+
 def mock_lookup_slack_user(name: str) -> list[dict]:
     """
     Fake version of a Slack user lookup, standing in for the real MCP call.
@@ -23,7 +25,7 @@ def mock_lookup_slack_user(name: str) -> list[dict]:
     
     return users
 
-def resolve_owner(name: str, lookup_fn=mock_lookup_slack_user) -> dict:
+def resolve_owner(name: str, lookup_fn=slack_mcp_lookup) -> dict:
     """
     Resolves an extracted owner name to a real Slack user.
     Returns one of three outcomes:
@@ -43,4 +45,4 @@ def resolve_owner(name: str, lookup_fn=mock_lookup_slack_user) -> dict:
 if __name__ == "__main__":
     print(resolve_owner("Alice"))   # expect: resolved
     print(resolve_owner("Alex"))    # expect: ambiguous, 2 candidates
-    print(resolve_owner("Zach"))    # expect: not_found
+    print(resolve_owner("Steven"))    # expect: not_found

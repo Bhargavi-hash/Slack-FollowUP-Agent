@@ -27,7 +27,7 @@ def post_action_item(channel: str, task: str, resolution: dict, due_date: str = 
     return response
 
 if __name__ == "__main__":
-    from resolution import resolve_owner
+    from taskloop.api.resolution import resolve_owner
 
     test_cases = [
         ("do the drawing part", resolve_owner("Alice")),
