@@ -3,13 +3,15 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
-from flask import Flask, request
+from flask import Flask, request, redirect
+import requests
 from slack_sdk import WebClient
 from slack_sdk.signature import SignatureVerifier
 from datetime import date
 from extraction import extract_action_items
 from resolution import resolve_owner
 from posting import post_action_item
+from token_store import save_installation
 from qstash import QStash, Receiver
 import json
 import os
@@ -135,3 +137,44 @@ def slack_process():
         post_action_item(channel_id, item["task"], resolution, item.get("due_date"))
 
     return "", 200
+
+
+@app.route("/slack/install")
+def slack_install():
+    client_id = os.getenv("SLACK_CLIENT_ID")
+    redirect_uri = "https://slack-follow-up-agent.vercel.app/slack/oauth_redirect"
+    scopes = "chat:write"  # bot scopes
+    user_scopes = "chat:write,canvases:write"  # user scopes, per your manifest
+
+    slack_auth_url = (
+        f"https://slack.com/oauth/v2/authorize"
+        f"?client_id={client_id}"
+        f"&scope={scopes}"
+        f"&user_scope={user_scopes}"
+        f"&redirect_uri={redirect_uri}"
+    )
+
+    return redirect(slack_auth_url)
+
+@app.route("/slack/oauth_redirect")
+def slack_oauth_redirect():
+    code = request.args.get("code")
+
+    response = requests.post("https://slack.com/api/oauth.v2.access", data={
+        "client_id": os.getenv("SLACK_CLIENT_ID"),
+        "client_secret": os.getenv("SLACK_CLIENT_SECRET"),
+        "code": code,
+        "redirect_uri": "https://slack-follow-up-agent.vercel.app/slack/oauth_redirect"
+    })
+    data = response.json()
+
+    if not data.get("ok"):
+        return f"Installation failed: {data.get('error')}", 400
+
+    bot_token = data['acsess_token']
+    user_token = data['authed_user']['access_token']
+    team_id = data['team']['id']   
+
+    save_installation(team_id=team_id, bot_token=bot_token, user_token=user_token)
+
+    return "Installation successful! You can close this tab."
