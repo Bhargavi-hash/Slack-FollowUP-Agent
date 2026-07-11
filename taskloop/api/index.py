@@ -10,6 +10,8 @@ from datetime import date
 from extraction import extract_action_items
 from resolution import resolve_owner
 from posting import post_action_item
+from qstash import QStash, Receiver
+import json
 import os
 from dotenv import load_dotenv
 
@@ -17,7 +19,13 @@ load_dotenv()
 
 app = Flask(__name__)
 slack_client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
+qstash_client = QStash(os.getenv("QSTASH_TOKEN"))
 verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_SECRET"))
+qstash_receiver = Receiver(
+    current_signing_key=os.getenv("QSTASH_CURRENT_SIGNING_KEY"),
+    next_signing_key=os.getenv("QSTASH_NEXT_SIGNING_KEY"),
+)
+
 
 def verify_slack_request(request) -> bool:
     body = request.get_data()
@@ -76,15 +84,44 @@ def slack_interactivity():
     if not verify_slack_request(request):
         return "Invalid request", 403
 
-    import json
     payload = json.loads(request.form.get("payload"))
 
     transcript = payload["view"]["state"]["values"]["transcript_block"]["transcript_input"]["value"]
     meeting_date = payload["view"]["state"]["values"]["datepicker_block"]["datepicker_action"]["selected_date"]
-
-    items = extract_action_items(transcript=transcript, meeting_date=meeting_date)
     channel_id = payload["view"]["private_metadata"]
 
+    qstash_client.message.publish_json(
+        url="https://slack-follow-up-agent.vercel.app/slack/process",
+        body={
+            "transcript": transcript,
+            "meeting_date": meeting_date,
+            "channel_id": channel_id
+        }
+    )
+
+    return "", 200
+
+
+@app.route("/slack/process", methods=["POST"])
+def slack_process():
+    # your job: verify this request genuinely came from QStash, using 
+    # qstash_receiver.verify() — hint: it needs the raw body and the 
+    # "Upstash-Signature" header (check BOTH cases, since Vercel may 
+    # lowercase it, per what we just found in the docs)
+
+    signature = request.headers.get("Upstash-Signature") or request.headers.get("upstash-signature")
+    body = request.get_data(as_text=True)
+
+    if not qstash_receiver.verify(signature=signature, body=body):
+        return "Invalid Request", 403
+
+    data = request.get_json()
+    
+    transcript = data["transcript"]
+    meeting_date = data["meeting_date"]
+    channel_id = data["channel_id"]
+
+    items = extract_action_items(transcript, meeting_date)
     for item in items:
         resolution = resolve_owner(item["owner_name"])
         post_action_item(channel_id, item["task"], resolution, item.get("due_date"))
