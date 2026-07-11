@@ -1,7 +1,11 @@
 # TaskLoop
 
+![TaskLoop banner](./TaskLoop_banner.png)
+
 **Author:** Bhargavi Kurukunda
+
 **Hackathon:** [Slack Agent Builder Hackathon 2026](https://slackhack.devpost.com/?ref_feature=challenge&ref_medium=your-open-hackathons&ref_content=Submissions+open&_gl=1*e9nsy3*_gcl_au*MjU5OTM3MTc5LjE3ODE5MjQ2MzU.*_ga*NDM1NjA5ODc1LjE3ODE5MjQ2MzU.*_ga_0YHJK3Y10M*czE3ODM4MDU2MDAkbzEzJGcwJHQxNzgzODA1NjAwJGo2MCRsMCRoMA..)
+
 **Submission Track:** New Slack Agent
 
 A Slack app that reads your meeting transcripts and turns them into real, assigned action items — posted right back into the channel, with the right people actually tagged.
