@@ -117,10 +117,10 @@ def slack_process():
     signature = request.headers.get("Upstash-Signature") or request.headers.get("upstash-signature")
     body = request.get_data(as_text=True)
 
-    print(f"DEBUG - signature present: {bool(signature)}")
-    print(f"DEBUG - signature value: {signature}")
-
-    if not qstash_receiver.verify(signature=signature, body=body):
+    try:
+        qstash_receiver.verify(signature=signature, body=body, url="https://slack-follow-up-agent.vercel.app/slack/process")
+    except Exception as e:
+        print(f"QSTASH VERIFY FAILED: {type(e).__name__}: {e}")
         return "Invalid Request", 403
 
     data = request.get_json()
