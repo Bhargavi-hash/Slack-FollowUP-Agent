@@ -1,0 +1,45 @@
+# TaskLoop
+
+**Author:** Bhargavi Kurukunda
+**Hackathon:** Slack Agent Builder Hackathon 2026
+**Submission Track:** New Slack Agent
+
+A Slack app that reads your meeting transcripts and turns them into real, assigned action items — posted right back into the channel, with the right people actually tagged.
+
+## Why I built this
+
+Every meeting ends the same way: someone says "okay, so Alice will do X, Bob will handle Y," and then it just... evaporates. Nobody writes it down. A week later everyone's asking who was supposed to do what.
+
+I wanted something that could read a transcript, figure out who actually committed to what, and post it somewhere everyone can see — without making things up. If it's not sure who "Alex" refers to, it says so instead of guessing and pinging the wrong person.
+
+## Try it
+
+TaskLoop isn't listed in Slack's app directory yet — install it directly here:
+
+**[Add TaskLoop to your workspace](https://slack-follow-up-agent.vercel.app/slack/install)**
+
+Click the link, approve the permissions, and you're set — `/taskloop` will be available right away.
+
+## How it works
+
+You run `/taskloop` in a channel, paste in your transcript, pick the meeting date, and hit submit. From there:
+
+1. Gemini reads the transcript and pulls out action items — who, what, and when — with a source quote attached to each one, so nothing gets invented.
+2. Each person's name gets checked against the real workspace using Slack's own MCP server, so the mention is a real, clickable one — not a guess.
+3. If a name is ambiguous (two Alex's?) or doesn't match anyone, it says so plainly instead of tagging the wrong person.
+4. Everything gets posted back into the channel it came from.
+
+Bigger transcripts run through a queue in the background, so nothing times out even if there's a lot to process.
+
+## Stack
+
+- Flask, deployed on Vercel
+- Gemini for extraction
+- Slack's official MCP server for user lookups
+- Upstash QStash for background processing
+- Upstash Redis for storing each workspace's tokens after install
+
+## Install
+
+Any workspace can add TaskLoop — it walks you through Slack's normal OAuth flow and works independently for each team that installs it.
+
