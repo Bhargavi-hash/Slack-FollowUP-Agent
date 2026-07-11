@@ -1,0 +1,7 @@
+Alright, let's go through everything before we close out. Steven, can you finish the API documentation by Friday? Tim, please review the pull request from last week and merge it if it looks good — let's get that done by Wednesday. 
+
+Alice, you're on the client onboarding call next Monday, can you prep the slides for that? Bob, we need the database migration script tested in staging before we push to prod, target end of next week for that. 
+
+Tina, please follow up with the design team about the new mockups — they were supposed to send them over last Tuesday and we haven't heard back. Jack, can you set up the monitoring dashboards for the new service? That should probably happen before Friday too since we're launching soon.
+
+Also, Rosario, once the migration script is tested, can you coordinate the actual production deployment? And finally, Eliza, please update the onboarding doc with the new steps we discussed today — that one's not super urgent, maybe by end of the month is fine.
