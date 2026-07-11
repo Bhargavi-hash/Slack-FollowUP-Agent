@@ -3,6 +3,9 @@ from flask import Flask, request
 from slack_sdk import WebClient
 from slack_sdk.signature import SignatureVerifier
 from datetime import date
+from extraction import extract_action_items
+from resolution import resolve_owner
+from posting import post_action_item
 import os
 from dotenv import load_dotenv
 
@@ -60,4 +63,24 @@ def slack_commands():
     }
 
     slack_client.views_open(trigger_id=trigger_id, view=modal_view)
+    return "", 200
+
+@app.route("/slack/interactivity", methods=["POST"])
+def slack_interactivity():
+    if not verify_slack_request(request):
+        return "Invalid request", 403
+
+    import json
+    payload = json.loads(request.form.get("payload"))
+
+    transcript = payload["view"]["state"]["values"]["transcript_block"]["transcript_input"]["value"]
+    meeting_date = payload["view"]["state"]["values"]["datepicker_block"]["datepicker_action"]["selected_date"]
+
+    items = extract_action_items(transcript=transcript, meeting_date=meeting_date)
+    channel_id = payload["user"]["id"]
+
+    for item in items:
+        resolution = resolve_owner(item["owner_name"])
+        post_action_item(channel_id, item["task"], resolution, item.get("due_date"))
+
     return "", 200
