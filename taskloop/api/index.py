@@ -34,10 +34,12 @@ def slack_commands():
         return "Invalid request", 403
 
     trigger_id = request.form.get("trigger_id")
+    channel_id = request.form.get("channel_id")
 
     modal_view = {
         "type": "modal",
         "callback_id": "transcript_submission",
+        "private_metadata": channel_id,
         "title": {"type": "plain_text", "text": "TaskLoop", "emoji": True},
         "submit": {"type": "plain_text", "text": "Submit", "emoji": True},
         "close": {"type": "plain_text", "text": "Cancel", "emoji": True},
@@ -81,7 +83,7 @@ def slack_interactivity():
     meeting_date = payload["view"]["state"]["values"]["datepicker_block"]["datepicker_action"]["selected_date"]
 
     items = extract_action_items(transcript=transcript, meeting_date=meeting_date)
-    channel_id = payload["user"]["id"]
+    channel_id = payload["view"]["private_metadata"]
 
     for item in items:
         resolution = resolve_owner(item["owner_name"])
