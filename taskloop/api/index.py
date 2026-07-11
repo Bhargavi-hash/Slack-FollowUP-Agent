@@ -24,9 +24,15 @@ qstash_client = QStash(
     base_url="https://qstash-us-east-1.upstash.io"
 )
 verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_SECRET"))
+
+current_key = os.getenv("QSTASH_CURRENT_SIGNING_KEY")
+next_key = os.getenv("QSTASH_NEXT_SIGNING_KEY")
+print(f"DEBUG - current_key present: {bool(current_key)}, starts with: {current_key[:8] if current_key else None}")
+print(f"DEBUG - next_key present: {bool(next_key)}, starts with: {next_key[:8] if next_key else None}")
+
 qstash_receiver = Receiver(
-    current_signing_key=os.getenv("QSTASH_CURRENT_SIGNING_KEY"),
-    next_signing_key=os.getenv("QSTASH_NEXT_SIGNING_KEY"),
+    current_signing_key=current_key,
+    next_signing_key=next_key,
 )
 
 
