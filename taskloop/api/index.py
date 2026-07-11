@@ -19,7 +19,10 @@ load_dotenv()
 
 app = Flask(__name__)
 slack_client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
-qstash_client = QStash(os.getenv("QSTASH_TOKEN"))
+qstash_client = QStash(
+    os.getenv("QSTASH_TOKEN"),
+    base_url="https://qstash-us-east-1.upstash.io"
+)
 verifier = SignatureVerifier(signing_secret=os.getenv("SLACK_SIGNING_SECRET"))
 qstash_receiver = Receiver(
     current_signing_key=os.getenv("QSTASH_CURRENT_SIGNING_KEY"),
@@ -116,7 +119,7 @@ def slack_process():
         return "Invalid Request", 403
 
     data = request.get_json()
-    
+
     transcript = data["transcript"]
     meeting_date = data["meeting_date"]
     channel_id = data["channel_id"]
