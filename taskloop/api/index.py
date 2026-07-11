@@ -177,4 +177,4 @@ def slack_oauth_redirect():
 
     save_installation(team_id=team_id, bot_token=bot_token, user_token=user_token)
 
-    return "Installation successful! You can close this tab."
+    return f"Installation successful! Team ID: {team_id}. You can close this tab."
