@@ -54,11 +54,12 @@ def slack_commands():
 
     trigger_id = request.form.get("trigger_id")
     channel_id = request.form.get("channel_id")
+    team_id = request.form.get("team_id")
 
     modal_view = {
         "type": "modal",
         "callback_id": "transcript_submission",
-        "private_metadata": channel_id,
+        "private_metadata": json.dumps({"channel_id": channel_id, "team_id": team_id}),
         "title": {"type": "plain_text", "text": "TaskLoop", "emoji": True},
         "submit": {"type": "plain_text", "text": "Submit", "emoji": True},
         "close": {"type": "plain_text", "text": "Cancel", "emoji": True},
@@ -99,14 +100,18 @@ def slack_interactivity():
 
     transcript = payload["view"]["state"]["values"]["transcript_block"]["transcript_input"]["value"]
     meeting_date = payload["view"]["state"]["values"]["datepicker_block"]["datepicker_action"]["selected_date"]
-    channel_id = payload["view"]["private_metadata"]
+    
+    metadata = json.loads(payload["view"]["private_metadata"])
+    channel_id = metadata["channel_id"]
+    team_id = metadata["team_id"]
 
     qstash_client.message.publish_json(
         url="https://slack-follow-up-agent.vercel.app/slack/process",
         body={
             "transcript": transcript,
             "meeting_date": meeting_date,
-            "channel_id": channel_id
+            "channel_id": channel_id,
+            "team_id": team_id
         }
     )
 
@@ -177,4 +182,4 @@ def slack_oauth_redirect():
 
     save_installation(team_id=team_id, bot_token=bot_token, user_token=user_token)
 
-    return f"Installation successful! Team ID: {team_id}. You can close this tab."
+    return f"Installation successful! You can close this tab."
