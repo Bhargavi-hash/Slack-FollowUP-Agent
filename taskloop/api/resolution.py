@@ -42,6 +42,12 @@ def resolve_owner(name: str, lookup_fn=slack_mcp_lookup) -> dict:
     
     return {"resolution": "resolved", "user_id": matches[0]["user_id"], "name": matches[0]["name"]}
     
+
+def resolve_owner_with_token(name: str, user_token: str) -> dict:
+    lookup_fn = lambda n: slack_mcp_lookup(n, user_token)
+    return resolve_owner(name, lookup_fn=lookup_fn)
+
+
 if __name__ == "__main__":
     print(resolve_owner("Alice"))   # expect: resolved
     print(resolve_owner("Alex"))    # expect: ambiguous, 2 candidates

@@ -5,12 +5,12 @@ import json
 import re
 
 load_dotenv()
-SLACK_USER_TOKEN=os.getenv("SLACK_USER_TOKEN")
+# SLACK_USER_TOKEN=os.getenv("SLACK_USER_TOKEN")
 
-def slack_mcp_lookup(name: str) -> list[dict]:
+def slack_mcp_lookup(name: str, user_token: str) -> list[dict]:
     """
     Real Slack user lookup via the official Slack MCP server.
-    Same interface as mock_lookup_slack_user: takes a name, returns a 
+    Same interface as mock_lookup_slack_user: takes a name and the user token, returns a 
     list of matching user dicts.
     """
     response = requests.post(
@@ -18,7 +18,7 @@ def slack_mcp_lookup(name: str) -> list[dict]:
         headers={
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "Authorization": f"Bearer {os.getenv('SLACK_USER_TOKEN')}"
+            "Authorization": f"Bearer {user_token}"
         },
         json={
             "jsonrpc": "2.0",

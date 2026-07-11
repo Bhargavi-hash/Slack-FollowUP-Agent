@@ -9,9 +9,9 @@ from slack_sdk import WebClient
 from slack_sdk.signature import SignatureVerifier
 from datetime import date
 from extraction import extract_action_items
-from resolution import resolve_owner
+from resolution import resolve_owner_with_token
 from posting import post_action_item
-from token_store import save_installation
+from token_store import save_installation, get_installation
 from qstash import QStash, Receiver
 import json
 import os
@@ -135,11 +135,20 @@ def slack_process():
     transcript = data["transcript"]
     meeting_date = data["meeting_date"]
     channel_id = data["channel_id"]
+    team_id = data["team_id"]
+
+    installation = get_installation(team_id=team_id)
+    if installation is None:
+        return "Workspace not installed", 403
+    
+    user_token = installation['user_token']
+    bot_token = installation['bot_token']
 
     items = extract_action_items(transcript, meeting_date)
+
     for item in items:
-        resolution = resolve_owner(item["owner_name"])
-        post_action_item(channel_id, item["task"], resolution, item.get("due_date"))
+        resolution = resolve_owner_with_token(item["owner_name"], user_token)
+        post_action_item(channel_id, item["task"], resolution, bot_token=bot_token, due_date=item.get("due_date"))
 
     return "", 200
 
