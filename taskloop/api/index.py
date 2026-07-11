@@ -107,13 +107,12 @@ def slack_interactivity():
 
 @app.route("/slack/process", methods=["POST"])
 def slack_process():
-    # your job: verify this request genuinely came from QStash, using 
-    # qstash_receiver.verify() — hint: it needs the raw body and the 
-    # "Upstash-Signature" header (check BOTH cases, since Vercel may 
-    # lowercase it, per what we just found in the docs)
-
+    
     signature = request.headers.get("Upstash-Signature") or request.headers.get("upstash-signature")
     body = request.get_data(as_text=True)
+
+    print(f"DEBUG - signature present: {bool(signature)}")
+    print(f"DEBUG - signature value: {signature}")
 
     if not qstash_receiver.verify(signature=signature, body=body):
         return "Invalid Request", 403
