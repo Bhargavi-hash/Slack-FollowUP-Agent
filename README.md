@@ -10,6 +10,10 @@
 
 A Slack app that reads your meeting transcripts and turns them into real, assigned action items — posted right back into the channel, with the right people actually tagged.
 
+## Demo link
+
+[Demo available on YouTube](https://youtu.be/LorInGKH_nY)
+
 ## Why I built this
 
 Every meeting ends the same way: someone says "okay, so Alice will do X, Bob will handle Y," and then it just... evaporates. Nobody writes it down. A week later everyone's asking who was supposed to do what.
